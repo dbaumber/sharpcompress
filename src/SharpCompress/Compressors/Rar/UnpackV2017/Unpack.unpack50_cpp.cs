@@ -334,7 +334,7 @@ void UnpWriteBuf()
               FragWindow.CopyData(Mem,0,BlockStart,BlockLength);
             else
               //x memcpy(Mem,Window+BlockStart,BlockLength);
-              Array.Copy(Window, BlockStart, Mem, 0, BlockLength);
+              Array.Copy(Window, (nint)BlockStart, Mem, 0, (nint)BlockLength);
           }
           else
           {
@@ -347,9 +347,9 @@ void UnpWriteBuf()
             else
             {
               //x memcpy(Mem,Window+BlockStart,FirstPartLength);
-              Array.Copy(Window, BlockStart, Mem, 0, FirstPartLength);
+              Array.Copy(Window, (nint)BlockStart, Mem, 0, (nint)FirstPartLength);
               //x memcpy(Mem+FirstPartLength,Window,BlockEnd);
-              Array.Copy(Window, 0, Mem, FirstPartLength,BlockEnd);
+              Array.Copy(Window, 0, Mem, (nint)FirstPartLength,(nint)BlockEnd);
             }
           }
 

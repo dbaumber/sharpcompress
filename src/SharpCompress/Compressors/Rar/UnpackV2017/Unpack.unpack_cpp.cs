@@ -164,7 +164,7 @@ void DoUnpack(uint Method,bool Solid)
         Unpack20(Solid);
       break;
 #endif
-#if !RarV2017_RAR5ONLY
+#if NotRarV2017_RAR5ONLY
     case 29: // rar 3.x compression
       if (!Fragmented)
         Unpack29(Solid);
