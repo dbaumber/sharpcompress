@@ -1,5 +1,6 @@
 var target = Argument("target", "Default");
 var tag = Argument("tag", "cake");
+var configuration = Argument("configuration", "Release");
 
 Task("Restore")
   .Does(() =>
@@ -15,7 +16,7 @@ Task("Build")
     {
         MSBuild("./sharpcompress.sln", c => 
         { 
-            c.SetConfiguration("Release")
+            c.SetConfiguration(configuration)
             .SetVerbosity(Verbosity.Minimal)
             .UseToolVersion(MSBuildToolVersion.VS2017);
         });
@@ -25,7 +26,8 @@ Task("Build")
         var settings = new DotNetCoreBuildSettings
         {
             Framework = "netstandard1.0",
-            Configuration = "Release"
+            Configuration = configuration,
+            NoRestore = true
         };
 
         DotNetCoreBuild("./src/SharpCompress/SharpCompress.csproj", settings);
@@ -50,16 +52,6 @@ Task("Test")
             Configuration = "Release",
             Framework = "netcoreapp2.0"
         };
-
-        DotNetCoreTest(file.ToString(), settings);
-
-
-        settings = new DotNetCoreTestSettings
-        {
-            Configuration = "Release",
-            Framework = "netcoreapp1.1"
-        };
-
         DotNetCoreTest(file.ToString(), settings);
     }
 });
@@ -89,10 +81,12 @@ Task("Default")
     .IsDependentOn("Test")
     .IsDependentOn("Pack");
 
- Task("RunTests")
+Task("RunTests")
     .IsDependentOn("Restore")
     .IsDependentOn("Build")
     .IsDependentOn("Test");
 
+Task("Compile")
+    .IsDependentOn("Build");
 
 RunTarget(target);
