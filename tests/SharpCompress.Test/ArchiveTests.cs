@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using SharpCompress.IO;
 using SharpCompress.Readers;
 using Xunit;
 
@@ -23,7 +24,7 @@ namespace SharpCompress.Test
             foreach (var path in testArchives)
             {
                 ResetScratch();
-                using (Stream stream = File.OpenRead(path))
+                using (var stream = new NonDisposingStream(File.OpenRead(path), true))
                 using (var archive = ArchiveFactory.Open(stream))
                 {
                     Assert.True(archive.IsSolid);
@@ -35,6 +36,7 @@ namespace SharpCompress.Test
 
                     if (archive.Entries.First().CompressionType == CompressionType.Rar)
                     {
+                        stream.ThrowOnDispose = false;
                         return;
                     }
                     foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
@@ -46,6 +48,7 @@ namespace SharpCompress.Test
                                                    Overwrite = true
                                                });
                     }
+                    stream.ThrowOnDispose = false;
                 }
                 VerifyFiles();
             }
@@ -67,17 +70,34 @@ namespace SharpCompress.Test
             foreach (var path in testArchives)
             {
                 ResetScratch();
-                using (Stream stream = File.OpenRead(path))
+                using (var stream = new NonDisposingStream(File.OpenRead(path), true))
                 using (var archive = ArchiveFactory.Open(stream, readerOptions))
                 {
-                    foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
+                    try
                     {
-                        entry.WriteToDirectory(SCRATCH_FILES_PATH, new ExtractionOptions()
+                        foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
                         {
-                            ExtractFullPath = true,
-                            Overwrite = true
-                        });
+                            entry.WriteToDirectory(SCRATCH_FILES_PATH,
+                                                   new ExtractionOptions()
+                                                   {
+                                                       ExtractFullPath = true,
+                                                       Overwrite = true
+                                                   });
+                        }
                     }
+                    catch (InvalidFormatException)
+                    {
+                        //rar SOLID test needs this
+                        stream.ThrowOnDispose = false;
+                        throw;
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        //SevenZipArchive_BZip2_Split test needs this
+                        stream.ThrowOnDispose = false;
+                        throw;
+                    }
+                    stream.ThrowOnDispose = false;
                 }
                 VerifyFiles();
             }
@@ -114,7 +134,7 @@ namespace SharpCompress.Test
             }
         }
 
-        void archive_CompressedBytesRead(object sender, CompressedBytesReadEventArgs e)
+        private void archive_CompressedBytesRead(object sender, CompressedBytesReadEventArgs e)
         {
             Console.WriteLine("Read Compressed File Part Bytes: {0} Percentage: {1}%",
                 e.CurrentFilePartCompressedBytesRead, CreatePercentage(e.CurrentFilePartCompressedBytesRead, partTotal));
@@ -125,13 +145,13 @@ namespace SharpCompress.Test
                 e.CompressedBytesRead, percentage);
         }
 
-        void archive_FilePartExtractionBegin(object sender, FilePartExtractionBeginEventArgs e)
+        private void archive_FilePartExtractionBegin(object sender, FilePartExtractionBeginEventArgs e)
         {
             partTotal = e.Size;
             Console.WriteLine("Initializing File Part Extraction: " + e.Name);
         }
 
-        void archive_EntryExtractionBegin(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
+        private void archive_EntryExtractionBegin(object sender, ArchiveExtractionEventArgs<IArchiveEntry> e)
         {
             entryTotal = e.Item.Size;
             Console.WriteLine("Initializing File Entry Extraction: " + e.Item.Key);

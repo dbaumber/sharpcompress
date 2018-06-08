@@ -56,7 +56,7 @@ namespace SharpCompress.Common
         public abstract bool IsEncrypted { get; }
 
         /// <summary>
-        /// Entry is password protected and encrypted and cannot be extracted.
+        /// Entry is directory.
         /// </summary>
         public abstract bool IsDirectory { get; }
 
@@ -68,7 +68,7 @@ namespace SharpCompress.Common
         /// <inheritdoc/>
         public override string ToString()
         {
-            return this.Key;
+            return Key;
         }
 
         internal abstract IEnumerable<FilePart> Parts { get; }

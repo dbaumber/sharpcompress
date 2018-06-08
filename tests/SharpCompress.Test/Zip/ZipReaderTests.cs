@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using SharpCompress.Common;
+using SharpCompress.IO;
 using SharpCompress.Readers;
 using SharpCompress.Readers.Zip;
 using SharpCompress.Writers;
@@ -274,7 +275,7 @@ namespace SharpCompress.Test.Zip
             VerifyFiles();
         }
 
-        class NonSeekableMemoryStream : MemoryStream
+        private class NonSeekableMemoryStream : MemoryStream
         {
             public override bool CanSeek => false;
         }
@@ -295,7 +296,7 @@ namespace SharpCompress.Test.Zip
             stream = new MemoryStream(stream.ToArray());
             File.WriteAllBytes(Path.Combine(SCRATCH_FILES_PATH, "foo.zip"), stream.ToArray());
 
-            using (IReader zipReader = ZipReader.Open(stream))
+            using (IReader zipReader = ZipReader.Open(new NonDisposingStream(stream, true)))
             {
                 while (zipReader.MoveToNextEntry())
                 {
